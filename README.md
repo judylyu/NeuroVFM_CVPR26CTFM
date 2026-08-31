@@ -1,11 +1,14 @@
 # NeuroVFM_CVPR26CTFM
 
-This repo should contain only these three files:
+CTFM linear-probing feature extraction with a frozen [NeuroVFM](https://github.com/MLNeurosurg/neurovfm) vision encoder.
 
-| File | Role |
+The official NeuroVFM Python package is vendored under `neurovfm/` (commit `9240021d`) so `from neurovfm.pipelines import load_encoder` works offline. Do not rely on installing the package from GitHub at evaluation time.
+
+| Path | Role |
 |---|---|
-| `extract_feat_LP.py` | Read `/workspace/inputs/*.nii.gz`, run the NeuroVFM vision encoder with average pooling, write `{id}.h5` (`y_hat`) |
+| `neurovfm/` | Official [MLNeurosurg/neurovfm](https://github.com/MLNeurosurg/neurovfm) source (`pip install -e ./neurovfm`) |
+| `extract_feat_LP.py` | Read `/workspace/inputs/*.nii.gz`, average-pool encoder tokens, write `{id}.h5` (`y_hat`) |
 | `extract_feat_LP.sh` | Docker entrypoint using `INPUT_DIR` / `OUTPUT_DIR` / optional `MASKS_DIR` |
-| `Dockerfile` | Install NeuroVFM, bake the encoder weights, run offline at evaluation time |
+| `Dockerfile` | Install the vendored package, bake encoder weights, run offline |
 
-Do not push the CT-CLIP source tree, BERT, or `checkpoints/` to this repo. Weights belong only in the `docker build` artifact `neurovfm_lp.tar.gz`.
+Do not push `checkpoints/` or CT-CLIP. Weights belong only in the `docker build` artifact `neurovfm_lp.tar.gz`.

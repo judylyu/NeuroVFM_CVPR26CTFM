@@ -1,0 +1,12 @@
+.git
+.gitignore
+.venv
+.claude
+CLAUDE_LOG.md
+
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.egg-info/
+
+*.tar.gz

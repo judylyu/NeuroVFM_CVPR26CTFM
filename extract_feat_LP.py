@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -9,7 +10,9 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from neurovfm.pipelines import load_encoder
+# Vendored official package: NeuroVFM_CVPR26CTFM/neurovfm/neurovfm/
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "neurovfm"))
+from neurovfm.pipelines import load_encoder # pyright: ignore[reportMissingImports]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
