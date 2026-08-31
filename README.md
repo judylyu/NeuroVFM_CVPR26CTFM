@@ -1,11 +1,11 @@
 # NeuroVFM_CVPR26CTFM
 
-Mentor 要求 GitHub 里只放改好的三个文件：
+This repo should contain only these three files:
 
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `extract_feat_LP.py` | 读 `/workspace/inputs/*.nii.gz`，NeuroVFM vision encoder + average pooling，写出 `{id}.h5`（`y_hat`） |
-| `extract_feat_LP.sh` | Docker 入口：`INPUT_DIR` / `OUTPUT_DIR` / 可选 `MASKS_DIR` |
-| `Dockerfile` | `pip install` NeuroVFM、bake encoder 权重；评测时离线跑 |
+| `extract_feat_LP.py` | Read `/workspace/inputs/*.nii.gz`, run the NeuroVFM vision encoder with average pooling, write `{id}.h5` (`y_hat`) |
+| `extract_feat_LP.sh` | Docker entrypoint using `INPUT_DIR` / `OUTPUT_DIR` / optional `MASKS_DIR` |
+| `Dockerfile` | Install NeuroVFM, bake the encoder weights, run offline at evaluation time |
 
-不要把 CT-CLIP 源码树、BERT、`checkpoints/` 推进这个 repo。权重只进 `docker build` 产物 `neurovfm_lp.tar.gz`。
+Do not push the CT-CLIP source tree, BERT, or `checkpoints/` to this repo. Weights belong only in the `docker build` artifact `neurovfm_lp.tar.gz`.
