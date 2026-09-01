@@ -361,15 +361,15 @@ def tokenize_volume(
     # 0 if all pixels in patch are foreground
     filtered = (~(mask_tokens.all(dim=1))).to(torch.uint8)  # [N]
     
-    # Generate 3D coordinates for each token
+    # Generate 3D coordinates for each token: 3 grids, each [n_patches_d, n_patches_h, n_patches_w]
     coords_d, coords_h, coords_w = np.meshgrid(
-        np.arange(n_patches_d),
-        np.arange(n_patches_h),
-        np.arange(n_patches_w),
-        indexing='ij'
+        np.arange(n_patches_d),  # [n_patches_d]
+        np.arange(n_patches_h),  # [n_patches_h]
+        np.arange(n_patches_w),  # [n_patches_w]
+        indexing='ij'            # 'ij' keeps (d, h, w) axis order, matching the (d h w) token flattening above
     )
-    coords_torch = torch.from_numpy(
-        np.stack([coords_d.flatten(), coords_h.flatten(), coords_w.flatten()], axis=1)
+    coords_torch = torch.from_numpy(  # [N, 3], N = n_patches_d * n_patches_h * n_patches_w, row i = (d, h, w) of token i
+        np.stack([coords_d.flatten(), coords_h.flatten(), coords_w.flatten()], axis=1)  # 3 x [N] -> [N, 3]
     ).long()
     
     if remove_background:

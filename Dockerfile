@@ -33,7 +33,13 @@ RUN pip install --user -e ./neurovfm
 RUN pip install --user h5py
 
 ENV MAX_JOBS=4
+ENV TORCH_CUDA_ARCH_LIST=8.9
 RUN pip install --user flash-attn==2.6.3 --no-build-isolation
+
+# The flash-attn wheel does not build fused_dense_lib, so FusedDense/FusedMLP
+# import as None and neurovfm's ViT cannot be constructed. Build the extension.
+RUN pip install --user --no-build-isolation \
+    "git+https://github.com/Dao-AILab/flash-attention.git@v2.6.3#subdirectory=csrc/fused_dense_lib"
 
 ENV HF_HUB_OFFLINE=1
 ENV TRANSFORMERS_OFFLINE=1

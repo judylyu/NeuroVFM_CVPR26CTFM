@@ -1,0 +1,6 @@
+{
+  "extraPaths": ["neurovfm"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "reportMissingImports": "warning"
+}
