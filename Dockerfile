@@ -26,6 +26,7 @@ COPY --chown=user:user . /opt/app/
 WORKDIR /opt/app/
 
 RUN pip install --user torch==2.5.0 torchvision==0.20.0 --index-url https://download.pytorch.org/whl/cu124
+RUN pip install --user torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.5.0+cu124.html
 
 RUN pip install --user -e ./neurovfm
 

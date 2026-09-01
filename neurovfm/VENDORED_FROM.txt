@@ -1,0 +1,4 @@
+Source: https://github.com/MLNeurosurg/neurovfm
+Commit: 9240021d4ef5c262b21cee5d219c2adf65f4d42f
+Vendored so `from neurovfm.pipelines import load_encoder` resolves offline
+(no pip install from the network at evaluation time).
