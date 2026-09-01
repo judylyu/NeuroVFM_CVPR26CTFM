@@ -7,7 +7,7 @@ The official NeuroVFM Python package is vendored under `neurovfm/` (commit `9240
 | Path | Role |
 |---|---|
 | `neurovfm/` | Official [MLNeurosurg/neurovfm](https://github.com/MLNeurosurg/neurovfm) source (`pip install -e ./neurovfm`) |
-| `extract_feat_LP.py` | Read `/workspace/inputs/*.nii.gz`, mean-pool each CT window separately, concatenate brain/blood/bone features, and write a 2304-d `y_hat` |
+| `extract_feat_LP.py` | Read `/workspace/inputs/*.nii.gz` and write encoder embeddings as `[num_patches, 768]` `y_hat` |
 | `extract_feat_LP.sh` | Docker entrypoint using `INPUT_DIR`, `OUTPUT_DIR`, optional `MASKS_DIR`, and `CHECKPOINT` |
 | `Dockerfile` | Install the vendored package, bake encoder weights, and run offline |
 
@@ -16,8 +16,10 @@ RPI orientation, 1×1×4 mm resampling, and a small center crop to patch-size
 multiples. ROI masks are not used for cropping. When `MASKS_DIR` is provided,
 it is used only to select inputs with matching mask files.
 
-For each CT volume, brain, blood, and bone window tokens are mean-pooled
-separately and concatenated in that order, producing a 2304-dimensional
-`y_hat`.
+For each CT volume, `encoder.embed()` is written to `y_hat` with shape
+`[num_patches, 768]`. `num_patches` varies with volume size; embeddings from
+the three CT windows are stored together in the output array. `hidden_dim` is
+768.
 
-Do not push `checkpoints/` or CT-CLIP. Weights belong only in the `docker build` artifact `neurovfm_lp.tar.gz`.
+Do not commit model checkpoints to the repository. Encoder weights are included
+only in the exported Docker image `neurovfm_lp.tar.gz`.

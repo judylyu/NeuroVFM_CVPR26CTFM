@@ -6,7 +6,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import h5py
-import numpy as np
 import torch
 from tqdm import tqdm
 
@@ -15,42 +14,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "neu
 from neurovfm.pipelines import load_encoder # pyright: ignore[reportMissingImports]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-WINDOWS = ("BrainWindow", "BloodWindow", "BoneWindow")
-
-
-def pool_ct_windows(
-    embs: torch.Tensor,
-    batch: dict,
-) -> np.ndarray:
-    if embs.ndim != 2 or embs.shape[1] != 768:
-        raise ValueError(f"expected [N, 768] embeddings, got {tuple(embs.shape)}")
-
-    boundaries = batch["series_cu_seqlens"].tolist()
-    if len(boundaries) != 4:
-        raise ValueError(
-            f"expected exactly 3 CT windows, got {len(boundaries) - 1}"
-        )
-
-    pooled = []
-    for name, start, end in zip(WINDOWS, boundaries[:-1], boundaries[1:]):
-        if end <= start:
-            raise ValueError(f"{name} has no foreground tokens")
-        pooled.append(embs[start:end].mean(dim=0))
-
-    y_hat = torch.cat(pooled, dim=0).float().cpu().numpy()
-
-    if y_hat.shape != (2304,) or not np.isfinite(y_hat).all():
-        raise ValueError(f"bad y_hat shape={y_hat.shape}")
-
-    return y_hat
-
-
-def extract_one(encoder, preprocessor, img_path: str) -> np.ndarray:
-    batch = preprocessor.load_study(img_path, modality="ct")
-    embs = encoder.embed(batch)
-    return pool_ct_windows(embs, batch)
 
 
 if __name__ == "__main__":
@@ -78,11 +41,20 @@ if __name__ == "__main__":
     for img_file in tqdm(imgs_files, desc="Extracting features"):
         img_id = img_file.replace(".nii.gz", "")
         try:
-            y_hat = extract_one(encoder, preprocessor, os.path.join(args.imgs_path, img_file))
+            batch = preprocessor.load_study(
+                os.path.join(args.imgs_path, img_file), modality="ct"
+            )
+            embs = encoder.embed(batch)
+            if embs.ndim != 2 or embs.shape[1] != 768 or embs.shape[0] < 1:
+                raise ValueError(
+                    f"expected [num_patches, hidden_dim]=[N, 768], got {tuple(embs.shape)}"
+                )
+            y_hat = embs.float().cpu().numpy()
         except Exception as e:
             print(f"Error extracting {img_file}: {e}")
             continue
 
+        print(f"{img_id}: y_hat.shape={y_hat.shape}")  # [num_patches, 768]
         out = os.path.join(args.dest, f"{img_id}.h5")
         assert not os.path.exists(out), out
         with h5py.File(out, "w") as hf:
