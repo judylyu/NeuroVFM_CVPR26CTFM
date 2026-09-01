@@ -17,19 +17,40 @@ from neurovfm.pipelines import load_encoder # pyright: ignore[reportMissingImpor
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def average_pool(embs: torch.Tensor) -> np.ndarray:
-    if embs.ndim != 2 or embs.shape[0] == 0:
-        raise ValueError(f"expected non-empty [N, D] embeddings, got {tuple(embs.shape)}")
-    y_hat = embs.mean(dim=0).float().cpu().numpy()
-    if y_hat.shape != (768,) or not np.isfinite(y_hat).all():
+WINDOWS = ("BrainWindow", "BloodWindow", "BoneWindow")
+
+
+def pool_ct_windows(
+    embs: torch.Tensor,
+    batch: dict,
+) -> np.ndarray:
+    if embs.ndim != 2 or embs.shape[1] != 768:
+        raise ValueError(f"expected [N, 768] embeddings, got {tuple(embs.shape)}")
+
+    boundaries = batch["series_cu_seqlens"].tolist()
+    if len(boundaries) != 4:
+        raise ValueError(
+            f"expected exactly 3 CT windows, got {len(boundaries) - 1}"
+        )
+
+    pooled = []
+    for name, start, end in zip(WINDOWS, boundaries[:-1], boundaries[1:]):
+        if end <= start:
+            raise ValueError(f"{name} has no foreground tokens")
+        pooled.append(embs[start:end].mean(dim=0))
+
+    y_hat = torch.cat(pooled, dim=0).float().cpu().numpy()
+
+    if y_hat.shape != (2304,) or not np.isfinite(y_hat).all():
         raise ValueError(f"bad y_hat shape={y_hat.shape}")
+
     return y_hat
 
 
 def extract_one(encoder, preprocessor, img_path: str) -> np.ndarray:
     batch = preprocessor.load_study(img_path, modality="ct")
     embs = encoder.embed(batch)
-    return average_pool(embs)
+    return pool_ct_windows(embs, batch)
 
 
 if __name__ == "__main__":
@@ -48,7 +69,10 @@ if __name__ == "__main__":
 
     imgs_files = sorted(f for f in os.listdir(args.imgs_path) if f.endswith(".nii.gz"))
     if args.masks_path:
-        imgs_files = [f for f in imgs_files if os.path.exists(os.path.join(args.masks_path, f))]
+        imgs_files = [
+            f for f in imgs_files
+            if os.path.exists(os.path.join(args.masks_path, f))
+        ]
 
     n = 0
     for img_file in tqdm(imgs_files, desc="Extracting features"):
