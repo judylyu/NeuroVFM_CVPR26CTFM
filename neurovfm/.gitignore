@@ -17,3 +17,5 @@ CLAUDE.md
 .ipynb_checkpoints
 lightning_logs/
 *bak
+*.tar.gz
+*CLAUDE_LOG.md
